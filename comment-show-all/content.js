@@ -1,38 +1,42 @@
 console.log("Auto Comment Sorter: script loaded");
 
-let hasClicked = false;
+let processedDropdowns = new WeakSet();
 
-function tryClickCommentsDropdown(observer) {
-  if (hasClicked) return;
-
+function clickDropdownsInView() {
   const dropdownButtons = [...document.querySelectorAll('div[role="button"]')];
 
-  for (const btn of dropdownButtons) {
-    if (btn.innerText.includes("Most relevant")) {
-      console.log("Auto Comment Sorter: Found 'Most Relevant', clicking...");
+  dropdownButtons.forEach(btn => {
+    if (
+      btn.innerText.includes("Most relevant") &&
+      !processedDropdowns.has(btn)
+    ) {
+      console.log("Auto Comment Sorter: Clicking 'Most Relevant'");
       btn.click();
-      hasClicked = true;
+      processedDropdowns.add(btn);
 
       setTimeout(() => {
         const options = [...document.querySelectorAll('span')];
         for (const option of options) {
           if (option.innerText.includes("All comments")) {
-            console.log("Auto Comment Sorter: Found 'All comments', clicking...");
+            console.log("Auto Comment Sorter: Clicking 'All comments'");
             option.click();
             break;
           }
         }
-      }, 1000);
-
-      if (observer) observer.disconnect();
-      break;
+      }, 500);
     }
-  }
+  });
 }
 
-// Try immediately in case it's already loaded
-tryClickCommentsDropdown();
+// Run once on load
+clickDropdownsInView();
 
-// Set up MutationObserver in case it's loaded later
-const observer = new MutationObserver(() => tryClickCommentsDropdown(observer));
-observer.observe(document.body, { childList: true, subtree: true });
+// Keep watching for dynamic modals or new comment sections
+const observer = new MutationObserver(() => {
+  clickDropdownsInView();
+});
+
+observer.observe(document.body, {
+  childList: true,
+  subtree: true,
+});
